@@ -356,7 +356,7 @@ def ensure_budgets_sheet(wb: Workbook, cfg: dict) -> None:
         next_row += 1
 
 
-def update_recap_sheet(wb: Workbook, cfg: dict, month_key: str, sheet_name: str):
+def update_recap_sheet(wb: Workbook, cfg: dict, month_key: str):
     recap_name = "Récapitulatif"
     if recap_name not in wb.sheetnames:
         ws = wb.create_sheet(recap_name, 0)
@@ -431,25 +431,34 @@ def update_recap_sheet(wb: Workbook, cfg: dict, month_key: str, sheet_name: str)
         )
         ws.conditional_formatting.add(warn_range, FormulaRule(formula=[warn_formula], fill=BUDGET_WARN_FILL))
 
-    col_letter = get_column_letter(month_col)
-
-    # Formules SUMIF par catégorie, référencées à la feuille détail du mois
-    for cat, r in cat_row.items():
-        if cat in (key_row_label, TOTAL_LABEL):
-            continue
-        formula = f"=SUMIF('{sheet_name}'!D:D,A{r},'{sheet_name}'!C:C)"
-        cell = ws.cell(row=r, column=month_col, value=formula)
-        cell.number_format = CURRENCY_FMT
-
     total_row = cat_row.get(TOTAL_LABEL)
-    if total_row:
-        first_cat_row = 2
-        last_cat_row = total_row - 1
-        formula = f"=SUM({col_letter}{first_cat_row}:{col_letter}{last_cat_row})"
-        cell = ws.cell(row=total_row, column=month_col, value=formula)
-        cell.number_format = CURRENCY_FMT
-        cell.font = Font(bold=True)
-        cell.fill = TOTAL_FILL
+    first_cat_row = 2
+    last_cat_row = (total_row - 1) if total_row else max_row
+
+    # Réécrit les formules SUMIF/SUM de TOUTES les colonnes mensuelles (pas
+    # seulement celle du mois en cours). Insérer une ligne pour une nouvelle
+    # catégorie décale les lignes existantes ; comme openpyxl ne réajuste pas
+    # le texte des anciennes formules lors d'un insert_rows, elles doivent être
+    # régénérées ici pour continuer à pointer sur la bonne catégorie.
+    max_col = ws.max_column
+    for c in range(2, max_col + 1):
+        col_month_key = ws.cell(row=key_row, column=c).value
+        if not col_month_key:
+            continue
+        col_letter = get_column_letter(c)
+        for cat, r in cat_row.items():
+            if cat in (key_row_label, TOTAL_LABEL):
+                continue
+            formula = f"=SUMIF('{col_month_key}'!D:D,A{r},'{col_month_key}'!C:C)"
+            cell = ws.cell(row=r, column=c, value=formula)
+            cell.number_format = CURRENCY_FMT
+
+        if total_row:
+            formula = f"=SUM({col_letter}{first_cat_row}:{col_letter}{last_cat_row})"
+            cell = ws.cell(row=total_row, column=c, value=formula)
+            cell.number_format = CURRENCY_FMT
+            cell.font = Font(bold=True)
+            cell.fill = TOTAL_FILL
 
     # Masquer la ligne technique _month_key
     ws.row_dimensions[key_row].hidden = True
@@ -642,7 +651,7 @@ def main():
 
     ensure_budgets_sheet(wb, cfg)
     sheet_name = write_detail_sheet(wb, month_key, transactions, categorized)
-    update_recap_sheet(wb, cfg, month_key, sheet_name)
+    update_recap_sheet(wb, cfg, month_key)
     reorder_recap_columns(wb)
 
     # Rétablit "Récapitulatif" en premier onglet
