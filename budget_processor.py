@@ -23,23 +23,28 @@ import argparse
 import csv
 import json
 import re
+import shutil
 import sys
 import unicodedata
 from datetime import datetime
 from pathlib import Path
 
 from openpyxl import Workbook, load_workbook
+from openpyxl.formatting.rule import FormulaRule
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
 UNCATEGORIZED_LABEL = "À catégoriser"
 TOTAL_LABEL = "TOTAL / SOLDE"
+BUDGETS_SHEET = "Budgets"
 
 HEADER_FILL = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
 HEADER_FONT = Font(bold=True, color="FFFFFF")
 TOTAL_FILL = PatternFill(start_color="FFF2CC", end_color="FFF2CC", fill_type="solid")
 FLAG_FILL = PatternFill(start_color="FFC7CE", end_color="FFC7CE", fill_type="solid")
+BUDGET_WARN_FILL = PatternFill(start_color="FFD966", end_color="FFD966", fill_type="solid")
 CURRENCY_FMT = '#,##0.00 €;-#,##0.00 €;-'
+MAX_BUDGET_ROWS = 500  # bornes des plages de mise en forme conditionnelle (large marge)
 
 
 # --------------------------------------------------------------------------
@@ -256,6 +261,25 @@ def suggest_category(tx: dict, cfg: dict) -> str | None:
 
 
 # --------------------------------------------------------------------------
+# Sauvegarde de sécurité
+# --------------------------------------------------------------------------
+
+def backup_existing_output(output_path: Path) -> Path | None:
+    """Copie le classeur existant dans un sous-dossier backups/ avant de le
+    réécrire, pour ne jamais perdre l'historique en cas de problème pendant
+    la génération. Retourne le chemin de la copie, ou None si le fichier
+    n'existait pas encore."""
+    if not output_path.exists():
+        return None
+    backups_dir = output_path.parent / "backups"
+    backups_dir.mkdir(exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_path = backups_dir / f"{output_path.stem}_{timestamp}{output_path.suffix}"
+    shutil.copy2(output_path, backup_path)
+    return backup_path
+
+
+# --------------------------------------------------------------------------
 # Écriture du fichier Excel maître
 # --------------------------------------------------------------------------
 
@@ -297,6 +321,39 @@ def write_detail_sheet(wb: Workbook, month_key: str, transactions: list[dict], c
     ws.column_dimensions["D"].width = 22
     ws.freeze_panes = "A2"
     return sheet_name
+
+
+def ensure_budgets_sheet(wb: Workbook, cfg: dict) -> None:
+    """Crée (une seule fois) la feuille 'Budgets', où tu peux saisir directement
+    dans Excel un budget mensuel prévisionnel par catégorie. Les valeurs déjà
+    présentes ne sont jamais écrasées lors des exécutions suivantes : seules
+    les catégories qui n'y figurent pas encore sont ajoutées en bas."""
+    budgets_seed = cfg.get("budgets", {})
+
+    if BUDGETS_SHEET not in wb.sheetnames:
+        ws = wb.create_sheet(BUDGETS_SHEET)
+        for col, h in enumerate(["Catégorie", "Budget mensuel"], start=1):
+            cell = ws.cell(row=1, column=col, value=h)
+            cell.font = HEADER_FONT
+            cell.fill = HEADER_FILL
+        ws.column_dimensions["A"].width = 26
+        ws.column_dimensions["B"].width = 16
+        for r, cat in enumerate(cfg["categories"], start=2):
+            ws.cell(row=r, column=1, value=cat)
+            cell = ws.cell(row=r, column=2, value=budgets_seed.get(cat))
+            cell.number_format = CURRENCY_FMT
+        return
+
+    ws = wb[BUDGETS_SHEET]
+    existing = {ws.cell(row=r, column=1).value for r in range(2, ws.max_row + 1)}
+    next_row = ws.max_row + 1
+    for cat in cfg["categories"]:
+        if cat in existing:
+            continue
+        ws.cell(row=next_row, column=1, value=cat)
+        cell = ws.cell(row=next_row, column=2, value=budgets_seed.get(cat))
+        cell.number_format = CURRENCY_FMT
+        next_row += 1
 
 
 def update_recap_sheet(wb: Workbook, cfg: dict, month_key: str, sheet_name: str):
@@ -363,6 +420,16 @@ def update_recap_sheet(wb: Workbook, cfg: dict, month_key: str, sheet_name: str)
         ws.cell(row=1, column=month_col).fill = HEADER_FILL
         ws.column_dimensions[get_column_letter(month_col)].width = 16
         ws.cell(row=key_row, column=month_col, value=month_key)
+
+        # Met en évidence les catégories qui dépassent leur budget mensuel
+        # (feuille "Budgets"), quand un budget a été saisi pour cette catégorie.
+        new_col_letter = get_column_letter(month_col)
+        warn_range = f"{new_col_letter}2:{new_col_letter}{MAX_BUDGET_ROWS}"
+        warn_formula = (
+            f'=AND($A2<>"",ISNUMBER(VLOOKUP($A2,{BUDGETS_SHEET}!$A:$B,2,FALSE)),'
+            f'ABS({new_col_letter}2)>VLOOKUP($A2,{BUDGETS_SHEET}!$A:$B,2,FALSE))'
+        )
+        ws.conditional_formatting.add(warn_range, FormulaRule(formula=[warn_formula], fill=BUDGET_WARN_FILL))
 
     col_letter = get_column_letter(month_col)
 
@@ -563,6 +630,9 @@ def main():
             save_config(cfg, args.config)
             print(f"   ✓ Config mise à jour : {args.config}")
 
+    # Sauvegarde de sécurité du classeur existant avant toute modification
+    backup_path = backup_existing_output(args.output)
+
     # Charge ou crée le classeur maître
     if args.output.exists():
         wb = load_workbook(args.output)
@@ -570,6 +640,7 @@ def main():
         wb = Workbook()
         wb.remove(wb.active)
 
+    ensure_budgets_sheet(wb, cfg)
     sheet_name = write_detail_sheet(wb, month_key, transactions, categorized)
     update_recap_sheet(wb, cfg, month_key, sheet_name)
     reorder_recap_columns(wb)
@@ -587,6 +658,8 @@ def main():
     print(f"\n✅ {total_transactions} transactions traitées pour {month_label(month_key)}")
     print(f"   Solde du mois : {total_montant:,.2f} €".replace(",", " ").replace(".", ","))
     print(f"   Fichier mis à jour : {args.output}")
+    if backup_path:
+        print(f"   💾 Sauvegarde de l'ancienne version : {backup_path}")
 
     if n_uncat:
         print(f"\n⚠️  {n_uncat} transaction(s) non catégorisée(s) — à corriger directement "
