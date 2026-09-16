@@ -34,12 +34,9 @@ PAGE_TEMPLATE = """
   table { border-collapse: collapse; width: 100%; background: white; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
   th, td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 13px; text-align: left; vertical-align: middle; }
   th { background: var(--bleu-clair); position: sticky; top: 68px; }
-  tr.suggested td.cat select { border-color: var(--vert); }
-  tr.none td.cat select { border-color: var(--rouge); }
   td.montant { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td.montant.neg { color: var(--rouge); }
   td.montant.pos { color: var(--vert); }
-  select { width: 100%; padding: 4px; font-size: 13px; }
   .libelle { max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .star { color: var(--vert); font-weight: bold; margin-right: 4px; }
   footer { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #ddd;
@@ -48,8 +45,19 @@ PAGE_TEMPLATE = """
   button { background: var(--bleu); color: white; border: none; padding: 10px 22px; font-size: 14px;
            border-radius: 4px; cursor: pointer; }
   button:hover { background: #163a5c; }
-  option.new-cat-option { font-weight: bold; }
   .count { font-size: 13px; color: #555; }
+  .combo { position: relative; }
+  .cat-input { width: 100%; padding: 4px 6px; font-size: 13px; border: 1px solid #ccc; border-radius: 3px; }
+  tr.suggested td.cat .cat-input { border-color: var(--vert); }
+  tr.none td.cat .cat-input { border-color: var(--rouge); }
+  .cat-list { position: absolute; top: 100%; left: 0; right: 0; margin-top: 2px; background: white;
+              border: 1px solid #ccc; border-radius: 3px; max-height: 220px; overflow-y: auto; z-index: 20;
+              box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+  .cat-item { padding: 6px 8px; font-size: 13px; cursor: pointer; }
+  .cat-item:hover, .cat-item.highlight { background: var(--bleu-clair); }
+  .cat-item.empty-msg { color: #888; cursor: default; }
+  .cat-item.new-cat-option { font-weight: bold; color: var(--bleu); }
+  .cat-item.clear-option { color: #888; border-top: 1px solid #eee; }
   #done { display: none; text-align: center; padding: 80px 20px; }
   #done h2 { color: var(--vert); }
 </style>
@@ -83,40 +91,129 @@ PAGE_TEMPLATE = """
 <script>
 const DATA = {{ data_json|safe }};
 const CATEGORIES = DATA.categories.slice(); // copie independante, pour detecter les nouvelles categories
+sortCategories();
 const TX = DATA.transactions;
+const selected = TX.map(tx => tx.suggestion || '');
 
-function buildOptions(selected) {
-  let html = '<option value="">— À catégoriser —</option>';
-  for (const cat of CATEGORIES) {
-    const sel = (cat === selected) ? 'selected' : '';
-    html += `<option value="${cat}" ${sel}>${cat}</option>`;
-  }
-  html += '<option value="__new__">➕ Nouvelle catégorie...</option>';
-  return html;
+function sortCategories() {
+  CATEGORIES.sort((a, b) => a.localeCompare(b, 'fr', {sensitivity: 'base'}));
 }
 
-function refreshAllSelects() {
-  document.querySelectorAll('select[data-idx]').forEach(s => {
-    const current = s.value;
-    s.innerHTML = buildOptions(current === '__new__' ? '' : current);
-    if (CATEGORIES.includes(current)) s.value = current;
-  });
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
 }
 
-function handleSelectChange(selectEl) {
-  if (selectEl.value === '__new__') {
-    const name = prompt("Nom de la nouvelle catégorie (ex: Épargne exceptionnelle) :");
-    if (name && name.trim()) {
-      const clean = name.trim();
-      if (!CATEGORIES.includes(clean)) CATEGORIES.push(clean);
-      refreshAllSelects();
-      selectEl.value = clean;
-    } else {
-      selectEl.value = "";
+function closeAllDropdowns(except) {
+  document.querySelectorAll('.cat-list').forEach(el => { if (el !== except) el.hidden = true; });
+}
+
+function filterCategories(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return CATEGORIES.slice();
+  return CATEGORIES.filter(c => c.toLowerCase().includes(q));
+}
+
+function renderDropdown(idx, query) {
+  const wrap = document.querySelector(`.combo[data-idx="${idx}"]`);
+  const list = wrap.querySelector('.cat-list');
+  const matches = filterCategories(query);
+  let html = '';
+  if (matches.length === 0) {
+    html += `<div class="cat-item empty-msg">Aucune catégorie trouvée</div>`;
+  } else {
+    for (const cat of matches) {
+      html += `<div class="cat-item" data-cat="${escapeHtml(cat)}">${escapeHtml(cat)}</div>`;
     }
   }
+  const trimmed = query.trim();
+  if (trimmed && !CATEGORIES.some(c => c.toLowerCase() === trimmed.toLowerCase())) {
+    html += `<div class="cat-item new-cat-option" data-newcat="${escapeHtml(trimmed)}">➕ Créer « ${escapeHtml(trimmed)} »</div>`;
+  }
+  html += `<div class="cat-item clear-option" data-clear="1">— À catégoriser —</div>`;
+  list.innerHTML = html;
+  list.querySelectorAll('.cat-item[data-cat]').forEach(el => {
+    el.addEventListener('mousedown', (e) => { e.preventDefault(); selectCategory(idx, el.dataset.cat); });
+  });
+  const newEl = list.querySelector('.cat-item[data-newcat]');
+  if (newEl) newEl.addEventListener('mousedown', (e) => { e.preventDefault(); createAndSelect(idx, newEl.dataset.newcat); });
+  const clearEl = list.querySelector('.cat-item[data-clear]');
+  if (clearEl) clearEl.addEventListener('mousedown', (e) => { e.preventDefault(); clearCategory(idx); });
+}
+
+function openDropdown(idx) {
+  const wrap = document.querySelector(`.combo[data-idx="${idx}"]`);
+  const input = wrap.querySelector('.cat-input');
+  const list = wrap.querySelector('.cat-list');
+  renderDropdown(idx, input.value);
+  list.hidden = false;
+  closeAllDropdowns(list);
+}
+
+function selectCategory(idx, cat) {
+  selected[idx] = cat;
+  const wrap = document.querySelector(`.combo[data-idx="${idx}"]`);
+  const input = wrap.querySelector('.cat-input');
+  input.value = cat;
+  wrap.querySelector('.cat-list').hidden = true;
   updateRemaining();
 }
+
+function clearCategory(idx) {
+  selected[idx] = '';
+  const wrap = document.querySelector(`.combo[data-idx="${idx}"]`);
+  const input = wrap.querySelector('.cat-input');
+  input.value = '';
+  wrap.querySelector('.cat-list').hidden = true;
+  updateRemaining();
+}
+
+function createAndSelect(idx, name) {
+  const clean = name.trim();
+  if (!clean) return;
+  if (!CATEGORIES.some(c => c.toLowerCase() === clean.toLowerCase())) {
+    CATEGORIES.push(clean);
+    sortCategories();
+  }
+  selectCategory(idx, clean);
+}
+
+function handleInput(idx, inputEl) {
+  const wrap = document.querySelector(`.combo[data-idx="${idx}"]`);
+  wrap.querySelector('.cat-list').hidden = false;
+  renderDropdown(idx, inputEl.value);
+  closeAllDropdowns(wrap.querySelector('.cat-list'));
+}
+
+function handleBlur(idx, inputEl) {
+  setTimeout(() => {
+    const wrap = document.querySelector(`.combo[data-idx="${idx}"]`);
+    wrap.querySelector('.cat-list').hidden = true;
+    inputEl.value = selected[idx] || '';
+  }, 150);
+}
+
+function handleKeydown(idx, inputEl, e) {
+  if (e.key === 'Escape') {
+    inputEl.value = selected[idx] || '';
+    document.querySelector(`.combo[data-idx="${idx}"] .cat-list`).hidden = true;
+    inputEl.blur();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    const matches = filterCategories(inputEl.value);
+    if (matches.length >= 1) {
+      selectCategory(idx, matches[0]);
+    } else if (inputEl.value.trim()) {
+      createAndSelect(idx, inputEl.value);
+    }
+    inputEl.blur();
+  }
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.combo')) closeAllDropdowns();
+});
 
 function fmtMontant(m) {
   const s = m.toLocaleString('fr-FR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
@@ -134,24 +231,31 @@ function render() {
       <td>${tx.date}</td>
       <td class="libelle" title="${tx.libelle}">${tx.suggestion ? '<span class="star">★</span>' : ''}${tx.libelle}</td>
       <td class="montant ${montantClass}">${fmtMontant(tx.montant)}</td>
-      <td class="cat"><select data-idx="${idx}" onchange="handleSelectChange(this)">${buildOptions(tx.suggestion)}</select></td>
+      <td class="cat">
+        <div class="combo" data-idx="${idx}">
+          <input type="text" class="cat-input" autocomplete="off" placeholder="— À catégoriser —" value="${escapeHtml(tx.suggestion || '')}">
+          <div class="cat-list" hidden></div>
+        </div>
+      </td>
     `;
+    const input = tr.querySelector('.cat-input');
+    input.addEventListener('focus', () => openDropdown(idx));
+    input.addEventListener('input', () => handleInput(idx, input));
+    input.addEventListener('blur', () => handleBlur(idx, input));
+    input.addEventListener('keydown', (e) => handleKeydown(idx, input, e));
     tbody.appendChild(tr);
   });
   updateRemaining();
 }
 
 function updateRemaining() {
-  const selects = document.querySelectorAll('select[data-idx]');
   let n = 0;
-  selects.forEach(s => { if (!s.value) n++; });
+  selected.forEach(v => { if (!v) n++; });
   document.getElementById('remaining').textContent = n;
 }
 
 function submitAll() {
-  const selects = document.querySelectorAll('select[data-idx]');
-  const categorized = new Array(TX.length).fill(null);
-  selects.forEach(s => { categorized[parseInt(s.dataset.idx)] = s.value || null; });
+  const categorized = selected.map(v => v || null);
 
   const newCategories = CATEGORIES.filter(c => !DATA.categories.includes(c));
 
