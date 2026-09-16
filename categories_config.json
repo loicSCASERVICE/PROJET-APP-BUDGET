@@ -1,0 +1,419 @@
+{
+  "_comment": "Ordre des categories = ordre d'affichage dans le recapitulatif. 'bank_category_mapping' fait correspondre les libelles de categorie deja fournis par la banque (normalises: minuscules, sans accents) vers tes categories cibles. 'keywords' sert de filet de securite si la banque ne fournit pas de categorie: le premier mot-cle trouve dans le libelle de la transaction assigne la categorie.",
+  "categories": [
+    "Prêt immobilier",
+    "Assurance habitation",
+    "Assurance voiture",
+    "Garantie voiture",
+    "Electricité",
+    "Téléphonie/Internet",
+    "Eau",
+    "ALDE",
+    "Abonnement multimédia",
+    "Abonnement iCloud",
+    "AG2R",
+    "Abonnement couche",
+    "Nounou",
+    "Salaire",
+    "Taxe foncière",
+    "Essence",
+    "Peage",
+    "Alimentation",
+    "Sorties",
+    "Loisirs",
+    "Romane",
+    "Charline",
+    "Epargne",
+    "Autre",
+    "Santé pris en charge",
+    "Restaurant",
+    "Parking",
+    "Credit exceptionnel",
+    "Remboursement santé",
+    "Cheque",
+    "Dépense one shot",
+    "Achat internet",
+    "Brico",
+    "Remboursement one shot",
+    "Retrait liquide",
+    "Cadeau ext",
+    "Indemnités santé",
+    "Epargne exceptionnelle",
+    "Frais de scolarité",
+    "Indemnités vacances",
+    "Santé",
+    "Frais banquaire",
+    "Frais d'entretien domicile"
+  ],
+  "bank_category_mapping": {
+    "pret immobilier": "Prêt immobilier",
+    "assurance habitation": "Assurance habitation",
+    "assurance voiture": "Assurance voiture",
+    "garantie voiture": "Garantie voiture",
+    "electricite": "Electricité",
+    "telephonie/internet": "Téléphonie/Internet",
+    "telephonie": "Téléphonie/Internet",
+    "eau": "Eau",
+    "alde": "ALDE",
+    "abonnement multimedia": "Abonnement multimédia",
+    "abonnement icloud": "Abonnement iCloud",
+    "ag2r": "AG2R",
+    "abonnement couche": "Abonnement couche",
+    "nounou": "Nounou",
+    "salaire": "Salaire",
+    "salaires": "Salaire",
+    "taxe fonciere": "Taxe foncière",
+    "essence": "Essence",
+    "peage": "Peage",
+    "alimentation": "Alimentation",
+    "sorties": "Sorties",
+    "restaurant": "Sorties",
+    "loisirs": "Loisirs",
+    "romane": "Romane",
+    "charline": "Charline",
+    "epargne": "Epargne",
+    "autre": "Autre",
+    "autres": "Autre"
+  },
+  "keywords": {
+    "Prêt immobilier": [
+      "pret immo",
+      "credit immo",
+      "pret logement",
+      "mensualite pret",
+      "remboursement pret00604767498 echeance",
+      "assu. caae pret habitat"
+    ],
+    "Assurance habitation": [
+      "assurance habitation",
+      "maif habitation",
+      "gmf habitation",
+      "mma habitation",
+      "monceau generale assurances monceau"
+    ],
+    "Assurance voiture": [
+      "assurance auto",
+      "assurance voiture",
+      "maif auto",
+      "gmf auto",
+      "mma auto",
+      "monceau generale assurances iard",
+      "monceau generale assurances monceau"
+    ],
+    "Garantie voiture": [
+      "garantie voiture",
+      "extension garantie",
+      "opteven"
+    ],
+    "Electricité": [
+      "edf",
+      "engie electricite",
+      "totalenergies elec",
+      "electricite"
+    ],
+    "Téléphonie/Internet": [
+      "orange",
+      "free mobile",
+      "free telecom",
+      "sfr",
+      "bouygues telecom",
+      "sosh"
+    ],
+    "Eau": [
+      "veolia",
+      "suez",
+      "eau de",
+      "facture eau",
+      "regie eau azur -eau",
+      "regie eau azur eau"
+    ],
+    "ALDE": [
+      "alde"
+    ],
+    "Abonnement multimédia": [
+      "netflix",
+      "disney+",
+      "disney plus",
+      "spotify",
+      "amazon prime",
+      "canal+",
+      "canal plus",
+      "deezer",
+      "paypal europe s.a.r.l. cie",
+      "paypal (europe) s.a r.l.",
+      "amazon payments payl amazon"
+    ],
+    "Abonnement iCloud": [
+      "icloud",
+      "apple.com/bill",
+      "apple com bill",
+      "paypal europe s.a.r.l. cie"
+    ],
+    "AG2R": [
+      "ag2r",
+      "mondiale mondiale/ra2074996840002026010194551361/nwra207499684000202001311546124nwra207499684000202001311546124fr65bmz005436ra2074996840002026010194551361"
+    ],
+    "Abonnement couche": [
+      "couche",
+      "lillydoo",
+      "kadolis"
+    ],
+    "Nounou": [
+      "nounou",
+      "assistante maternelle",
+      "pajemploi",
+      "cesu"
+    ],
+    "Salaire": [
+      "salaire",
+      "virement salaire",
+      "paie",
+      "dushow vir nice 901"
+    ],
+    "Taxe foncière": [
+      "taxe fonciere",
+      "dgfip taxe",
+      "direction generale des finances"
+    ],
+    "Essence": [
+      "essence",
+      "total access",
+      "shell",
+      "esso",
+      "carburant",
+      "station service",
+      "relais val fleuri darel",
+      "total 06cannes totalenergies",
+      "relais grands plans totalenergies",
+      "intermarche dac vill intermarche",
+      "relais grand plans",
+      "relais grand plans totalenergies",
+      "relais carros gat totalenergies"
+    ],
+    "Peage": [
+      "peage",
+      "vinci autoroutes",
+      "aprr",
+      "sanef",
+      "escota",
+      "10cdt cdt tratta"
+    ],
+    "Alimentation": [
+      "carrefour",
+      "leclerc",
+      "auchan",
+      "intermarche",
+      "lidl",
+      "monoprix",
+      "super u",
+      "casino",
+      "ulade",
+      "sumup *les paniers",
+      "leclerc colle sur e.leclerc",
+      "e.leclerc web col e.leclerc",
+      "ulade gaude intermarche",
+      "boulangerie flor sai moulin",
+      "mp*carrefour dac carrefour",
+      "satoriz",
+      "mp*carrefour nice carrefour",
+      "interm calao intermarche",
+      "station avia portes avia",
+      "e.leclerc mornas e.leclerc",
+      "moulin flor moulin flor",
+      "raiola beal raiola beal",
+      "ulade gaude",
+      "inter valgui cagnes intermarche",
+      "marcel fils cagnes marcel",
+      "leclerc nice e.leclerc",
+      "bulk colchester bulk",
+      "intermarche ula intermarche",
+      "sumup primeurs",
+      "picard 771 lau picard",
+      "cap sud bio mucap",
+      "sumup *maison servai",
+      "ets fenocchio gau fenocchio",
+      "e.leclerc beausoleil e.leclerc",
+      "satoriz mandelie satoriz",
+      "fromagerie peyron fromagerie peyron",
+      "carrefour cannes carrefour market"
+    ],
+    "Sorties": [
+      "restaurant",
+      "bar",
+      "cinema",
+      "brasserie"
+    ],
+    "Loisirs": [
+      "loisirs",
+      "decathlon",
+      "fnac",
+      "sport",
+      "cultura nice cultura",
+      "lucien sports beaufo",
+      "thales cie colombes thales",
+      "regie stat beaufo",
+      "passenger beaufor enjoy gravity",
+      "semab beaufort societe d'economie",
+      "gaspard sports beauf sarl",
+      "office tourisme beau office",
+      "decathlon nice 0070 decathlon"
+    ],
+    "Romane": [
+      "romane"
+    ],
+    "Charline": [
+      "charline",
+      "0272 nice h&m"
+    ],
+    "Epargne": [
+      "epargne",
+      "virement epargne",
+      "livret a",
+      "pea",
+      "assurance vie",
+      "vir inst vers scarcella",
+      "vir inst vers aude"
+    ],
+    "Autre": [
+      "selarl spormeu cagne selarl",
+      "start hairs cagnes madame",
+      "city-drop suresnes 1c2f",
+      "easypol-nexi-bollett"
+    ],
+    "Santé pris en charge": [
+      "faraj lyna nice",
+      "bonjour saint lau sidonie",
+      "selarl medecin selarl medecin",
+      "docteur tran nice",
+      "im. concept mon",
+      "cimm monaco",
+      "macygan mandelieu andras macygan"
+    ],
+    "Restaurant": [
+      "sumup *ikura sushi",
+      "burger king villeneu burger",
+      "atelier saint lau l'atelier",
+      "flunch portes les flunch",
+      "telemark beaufort telemark",
+      "chez regine contes chez",
+      "liberatore cucchi",
+      "pistou pizza saint pistou",
+      "brisseault thi nic len",
+      "burger king nice burger"
+    ],
+    "Parking": [
+      "pbp_nice boulogne-bi",
+      "pbp_nice boulogne-bi paybyphone",
+      "sas jacques cagne sas",
+      "indigo cagnes indigo",
+      "10cdt cdt tratta",
+      "pbp_nice 92bou",
+      "sas pslv nice",
+      "parking",
+      "parkings monaco monaco parkings",
+      "cap 3000 parking",
+      "pomme d'or sai pomme",
+      "station automate ville saint-laurent-du-var"
+    ],
+    "Credit exceptionnel": [
+      "scp pegurier benoit chappat",
+      "dgfip finances publiques 6p06700",
+      "vir inst patrick scarcella",
+      "cse thales alenia space",
+      "madame scarcella aude",
+      "achat table ext interieur",
+      "scarcella aude cloture compte",
+      "suire dutey viremen virement"
+    ],
+    "Remboursement santé": [
+      "mhp prestations sante pleiade",
+      "cpam 061 nice"
+    ],
+    "Cheque": [
+      "cheque",
+      "cheque emis7827208",
+      "cheque emis7827205/",
+      "cheque emis7827201",
+      "cheque emis7827217",
+      "cheque emis7827211/",
+      "cheque emis7827213",
+      "cheque emis7827206",
+      "cheque emis7827210",
+      "cheque emis7827209"
+    ],
+    "Dépense one shot": [
+      "back market paris back",
+      "web madame scarcella cha",
+      "vir inst vers poltronesofa",
+      "helloasso* billetter helloasso",
+      "ppg*chocolat pralus",
+      "laposte g060650 poste",
+      "beaufortaine beaufortaine",
+      "kiabi nice kiabi",
+      "nocibe nice nocibe",
+      "miss mam antibes miss"
+    ],
+    "Achat internet": [
+      "amazon payments payl amazon",
+      "paypal europe s.a.r.l. cie",
+      "amz digital fra payl",
+      "leboncoin paris leboncoin",
+      "veepee saint-denis veepee",
+      "amazon sarl payli amazon",
+      "forf p.stat web drfip"
+    ],
+    "Brico": [
+      "leroy merlin nice leroy",
+      "ciffreo bona nice ciffreo"
+    ],
+    "Remboursement one shot": [
+      "telephone madame scarcella audtelephone",
+      "alde madame scarcella aude",
+      "poltrone sofa madame scarcel",
+      "poltron madame scarcella charl",
+      "madame scarcella aude",
+      "sejour areche madame scarcellasejour",
+      "vir inst vers aude"
+    ],
+    "Retrait liquide": [
+      "distributeurx3088 loomis france paris",
+      "distributeurx3088 cha_la_gaude_d 14h55"
+    ],
+    "Cadeau ext": [
+      "xocoalt nice xocoalt"
+    ],
+    "Indemnités santé": [
+      "cpam 061 nice",
+      "web madame scarcella aud"
+    ],
+    "Epargne exceptionnelle": [
+      "web madame scarcella aude",
+      "web madame scarcella charlin",
+      "web madame scarcella aud",
+      "vir inst vers loic"
+    ],
+    "Frais de scolarité": [
+      "cantine gaude regie recette",
+      "garderie etudes gaude mairie"
+    ],
+    "Indemnités vacances": [
+      "cse thales alenia space"
+    ],
+    "Santé": [
+      "phcie plan bois pharmacie",
+      "pharmacie beaufo pharmacie beaufortain",
+      "nicolier germai nice mmf",
+      "des vespins cagne pharmacie",
+      "vir inst vers aude",
+      "pharmacie cap pharmacie cap3000",
+      "bonjour saint lau sidonie"
+    ],
+    "Frais banquaire": [
+      "offre premium",
+      "scarcella loic remboursement cotisation"
+    ],
+    "Frais d'entretien domicile": [
+      "vir inst vers christel"
+    ]
+  }
+}
